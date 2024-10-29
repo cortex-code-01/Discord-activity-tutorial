@@ -11,6 +11,12 @@ export default defineConfig({
         secure: false,
         ws: true,
       },
+
+      '/ws': {
+        target: 'ws://localhost:8080',
+        changeOrigin: true,
+        ws: true,
+      },
     },
     hmr: {
       clientPort: 443,

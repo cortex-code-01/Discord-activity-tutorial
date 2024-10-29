@@ -1,7 +1,10 @@
 import express from "express";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
+import WebSocket, {WebSocketServer} from "ws";
 dotenv.config({ path: "../.env" });
+
+const wss = new WebSocketServer({port: 8080, path: '/ws'})
 
 const app = express();
 const port = 3001;
@@ -35,3 +38,38 @@ app.post("/api/token", async (req, res) => {
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });
+
+
+
+
+let clickCount = 0; // The shared counter for all connected clients
+
+// When a new client connects
+wss.on('connection', (ws) => {
+    // Send the current click count to the newly connected client
+    ws.send(JSON.stringify({ type: 'update', count: clickCount }));
+
+    // Listen for messages from clients
+    ws.on('message', (message) => {
+        console.log('hola')
+        const data = JSON.parse(message);
+        console.log(data)
+        if (data.type === 'click') {
+            clickCount += 1; // Increment the shared counter
+
+            // Broadcast the updated count to all connected clients
+            wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({ type: 'update', count: clickCount }));
+                }
+            });
+        }
+    });
+
+    // Optional: Handle client disconnection
+    ws.on('close', () => {
+        console.log('Client disconnected');
+    });
+});
+
+console.log('WebSocket server is running on ws://localhost:8080');
